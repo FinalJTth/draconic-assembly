@@ -1,6 +1,11 @@
 {
   "prettier.tabWidth": 2,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
   "editor.formatOnType": false, // required
   "editor.formatOnPaste": false, // optional
   "editor.formatOnSave": true, // optional
@@ -9,5 +14,11 @@
   "files.watcherExclude": {
     "**/routeTree.gen.ts": true
   },
-  "vs-code-prettier-eslint.prettierLast": false // set as "true" to run 'prettier' last not first
+  "eslint.workingDirectories": [
+    "./electron",
+    "./renderer"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
 }

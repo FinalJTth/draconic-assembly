@@ -12,17 +12,16 @@ const TitleButton = ({ children, ...props }: TextProps | TitleButtonProps) => {
     <Flex
       justify="center"
       width="30px"
-      pt="1px"
       className={
         "cursor-pointer hover:bg-opacity-80" +
-        (children && children?.toString() === "×" ? " hover:bg-red-700" : " hover:bg-indigo-700")
+        (children && children?.toString() === "×" ? " hover:bg-red-700" : " hover:bg-cyan-700")
       }
     >
       <Text
         as="span"
         size="1"
         weight="bold"
-        color="indigo"
+        color="cyan"
         style={{
           WebkitTouchCallout: "none",
           WebkitUserSelect: "none",

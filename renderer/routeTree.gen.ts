@@ -13,6 +13,7 @@ import { createFileRoute } from "@tanstack/react-router"
 // Import Routes
 
 import { Route as rootRoute } from "./routes/~__root"
+import { Route as MainImport } from "./routes/~main"
 import { Route as AppImport } from "./routes/~app"
 import { Route as AboutImport } from "./routes/~about"
 
@@ -21,6 +22,12 @@ import { Route as AboutImport } from "./routes/~about"
 const IndexLazyImport = createFileRoute("/")()
 
 // Create/Update Routes
+
+const MainRoute = MainImport.update({
+  id: "/main",
+  path: "/main",
+  getParentRoute: () => rootRoute,
+} as any)
 
 const AppRoute = AppImport.update({
   id: "/app",
@@ -65,6 +72,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppImport
       parentRoute: typeof rootRoute
     }
+    "/main": {
+      id: "/main"
+      path: "/main"
+      fullPath: "/main"
+      preLoaderRoute: typeof MainImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -74,12 +88,14 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexLazyRoute
   "/about": typeof AboutRoute
   "/app": typeof AppRoute
+  "/main": typeof MainRoute
 }
 
 export interface FileRoutesByTo {
   "/": typeof IndexLazyRoute
   "/about": typeof AboutRoute
   "/app": typeof AppRoute
+  "/main": typeof MainRoute
 }
 
 export interface FileRoutesById {
@@ -87,14 +103,15 @@ export interface FileRoutesById {
   "/": typeof IndexLazyRoute
   "/about": typeof AboutRoute
   "/app": typeof AppRoute
+  "/main": typeof MainRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/about" | "/app"
+  fullPaths: "/" | "/about" | "/app" | "/main"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/about" | "/app"
-  id: "__root__" | "/" | "/about" | "/app"
+  to: "/" | "/about" | "/app" | "/main"
+  id: "__root__" | "/" | "/about" | "/app" | "/main"
   fileRoutesById: FileRoutesById
 }
 
@@ -102,12 +119,14 @@ export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   AboutRoute: typeof AboutRoute
   AppRoute: typeof AppRoute
+  MainRoute: typeof MainRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   AboutRoute: AboutRoute,
   AppRoute: AppRoute,
+  MainRoute: MainRoute,
 }
 
 export const routeTree = rootRoute
@@ -122,7 +141,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/about",
-        "/app"
+        "/app",
+        "/main"
       ]
     },
     "/": {
@@ -133,6 +153,9 @@ export const routeTree = rootRoute
     },
     "/app": {
       "filePath": "~app.tsx"
+    },
+    "/main": {
+      "filePath": "~main.tsx"
     }
   }
 }

@@ -12,12 +12,12 @@ declare global {
       };
     };
     ssh: {
-      connect: (sshConfigs: SshConfig) => IpcResponsePayload;
-      execute: (command) => IpcResponseExecutionPayload;
-      selectKey: () => IpcResponsePayload;
+      connect: (sshConfigs: SshConfig) => Promise<IpcResponsePayload>;
+      execute: (command) => Promise<IpcResponseExecutionPayload>;
     };
     utils: {
-      selectFile: () => IpcResponsePayload;
+      selectFile: () => Promise<IpcResponsePayload>;
+      getPlatform: () => Promise<IpcResponsePayload>;
     };
   }
 }

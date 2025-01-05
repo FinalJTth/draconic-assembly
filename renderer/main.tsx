@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
-import "./index.css";
+import "./styles/global.css";
 import "@radix-ui/themes/styles.css";
 
 const memoryHistory = createMemoryHistory({

@@ -1,11 +1,10 @@
-import MainContainer from "@/components/shared/MainContainer";
 import TitleBar from "@/components/shared/TitleBar";
 import { Theme, ThemePanel } from "@radix-ui/themes";
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/router-devtools";
+import { createRootRoute, Outlet } from "@tanstack/react-router";
+import React from "react";
 
-export const Route = createRootRoute({
-  component: () => (
+const Root = (): React.ReactElement => {
+  return (
     <Theme appearance="dark" accentColor="cyan" grayColor="mauve">
       <ThemePanel />
       <TitleBar />
@@ -22,10 +21,14 @@ export const Route = createRootRoute({
       </Link>
         */}
       </div>
-      <MainContainer className="scroller-transition">
+      <div className="scroller-transition">
         <Outlet />
-      </MainContainer>
-      <TanStackRouterDevtools />
+      </div>
+      {/*<TanStackRouterDevtools />*/}
     </Theme>
-  ),
+  );
+};
+
+export const Route = createRootRoute({
+  component: Root,
 });

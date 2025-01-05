@@ -3,11 +3,7 @@ import reactLogo from "../assets/react.svg";
 import viteLogo from "/vite.svg";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/app")({
-  component: App,
-});
-
-function App() {
+const App = (): React.ReactElement => {
   const [count, setCount] = useState(0);
 
   return (
@@ -30,6 +26,8 @@ function App() {
       <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
     </>
   );
-}
+};
 
-export default App;
+export const Route = createFileRoute("/app")({
+  component: App,
+});

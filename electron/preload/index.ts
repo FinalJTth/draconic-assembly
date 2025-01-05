@@ -127,11 +127,11 @@ contextBridge.exposeInMainWorld("electron", {
 contextBridge.exposeInMainWorld("ssh", {
   connect: (config: SshConfig) => ipcRenderer.invoke("ssh:connect", config),
   execute: (command: string) => ipcRenderer.invoke("ssh:execute", command),
-  selectKey: () => ipcRenderer.invoke("ssh:select-key"),
 });
 
 contextBridge.exposeInMainWorld("utils", {
   selectFile: () => ipcRenderer.invoke("utils:select-file"),
+  getPlatform: () => ipcRenderer.invoke("utils:get-platform"),
 });
 
 setTimeout(removeLoading, 4999);

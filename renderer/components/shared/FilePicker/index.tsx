@@ -1,7 +1,7 @@
 import { Button, Container } from "@radix-ui/themes";
 import React, { useMemo, useRef } from "react";
 
-const DropBox = ({
+const FilePicker = ({
   className,
   children,
 }: Readonly<{ children: React.ReactNode }> & { className?: string }): React.ReactElement => {
@@ -26,4 +26,4 @@ const DropBox = ({
   );
 };
 
-export default DropBox;
+export default FilePicker;

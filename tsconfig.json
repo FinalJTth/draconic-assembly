@@ -20,7 +20,7 @@
       "@/*": ["renderer/*"]
     }
   },
-  "include": ["renderer", "electron"],
+  "include": ["eslint.config.mjs", "renderer", "electron"],
   "exclude": ["node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

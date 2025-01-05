@@ -1,14 +1,15 @@
 import { Container } from "@radix-ui/themes";
 import React from "react";
+import "@/styles/radix-overrides/index.css";
 
-interface MainContainerProps {
+interface MainContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
   children: React.ReactNode;
 }
 
-const MainContainer = ({ className, children }: MainContainerProps): React.ReactElement => {
+const MainContainer = ({ className, children, ...rest }: MainContainerProps): React.ReactElement => {
   return (
-    <Container width="100%" className={className}>
+    <Container tabIndex={-1} width="100%" className={`${className} outline-none select-none`} {...rest}>
       {children}
     </Container>
   );

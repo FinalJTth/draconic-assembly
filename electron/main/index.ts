@@ -174,13 +174,17 @@ ipcMain.handle("ssh:execute", async (event, command: string) => {
   }
 });
 
-ipcMain.handle("ssh:select-key", async () => {
+ipcMain.handle("utils:select-file", async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ["openFile"],
   });
   if (canceled) {
-    IpcResponse.OnSuccess("Selection canceled.");
+    return IpcResponse.OnSuccess("Selection canceled.");
   }
 
   return IpcResponse.OnSuccess("Private key selected successfully.", filePaths[0]);
+});
+
+ipcMain.handle("utils:get-platform", async () => {
+  return IpcResponse.OnSuccess("Success.", os.platform());
 });
