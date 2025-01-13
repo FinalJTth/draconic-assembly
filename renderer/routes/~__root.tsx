@@ -1,14 +1,34 @@
 import TitleBar from "@/components/shared/TitleBar";
-import { Theme, ThemePanel } from "@radix-ui/themes";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
-import React from "react";
+import { Theme } from "@radix-ui/themes";
+import { createRootRoute, useMatch, useMatches } from "@tanstack/react-router";
+import { ReactElement, useEffect, useRef } from "react";
 
-const Root = (): React.ReactElement => {
+import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
+import "@radix-ui/themes/styles.css";
+import { AnimatePresence } from "framer-motion";
+
+import AnimatedOutlet from "@/components/shared/AnimatedOutlet";
+
+const Root = (): ReactElement => {
+  const matches = useMatches();
+  const match = useMatch({ strict: false });
+  const nextMatchIndex = matches.findIndex((d) => d.id === match.id) + 1;
+  const nextMatch = matches[nextMatchIndex];
+
+  const displayRef = useRef<HTMLDivElement>(null);
+
+  const titleBarHeight = "30px";
+
+  useEffect(() => {
+    window.startup.reactReady();
+  }, []);
+
   return (
     <Theme appearance="dark" accentColor="cyan" grayColor="mauve">
-      <ThemePanel />
-      <TitleBar />
-      <div className="flex gap-2 py-[10px]">
+      {/*<ThemePanel />*/}
+      {/*<TanStackRouterDevtools />*/}
+      <TitleBar height={titleBarHeight} />
+      <div className="flex gap-2" style={{ paddingTop: titleBarHeight }}>
         {/*
       <Link to="/" className="[&.active]:font-bold">
         Home
@@ -21,10 +41,20 @@ const Root = (): React.ReactElement => {
       </Link>
         */}
       </div>
-      <div className="scroller-transition">
-        <Outlet />
+      <div
+        ref={displayRef}
+        id="error-root"
+        className="scroller-transition"
+        style={{
+          height: `calc(100vh - ${titleBarHeight})`,
+        }}
+      >
+        <GlobalErrorBoundary>
+          <AnimatePresence mode="popLayout">
+            <AnimatedOutlet key={nextMatch.id} />
+          </AnimatePresence>
+        </GlobalErrorBoundary>
       </div>
-      {/*<TanStackRouterDevtools />*/}
     </Theme>
   );
 };

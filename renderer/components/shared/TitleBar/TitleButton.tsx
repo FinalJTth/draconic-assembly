@@ -1,16 +1,16 @@
-import { Box, Button, Flex, Text, TextProps } from "@radix-ui/themes";
-import React from "react";
-
-import { useEffect } from "react";
+import { Flex, Text, TextProps } from "@radix-ui/themes";
+import React, { ReactElement } from "react";
 
 interface TitleButtonProps {
   children: Readonly<React.ReactNode>;
 }
 
-const TitleButton = ({ children, ...props }: TextProps | TitleButtonProps) => {
+const TitleButton = ({ children, ...props }: TextProps | TitleButtonProps): ReactElement => {
   return (
     <Flex
       justify="center"
+      align="center"
+      height="100%"
       width="30px"
       className={
         "cursor-pointer hover:bg-opacity-80" +

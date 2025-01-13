@@ -1,23 +1,35 @@
-import { SshConfig } from "../../electron/classes/ssh";
-import { IpcResponsePayload } from "../../electron/classes/ipc";
+import { IpcResponsePayload } from "#/types/ipc";
+import { SshConfig } from "#/types/ssh";
+import { ConfigValidation } from "../../electron/classes/ssh";
 export {};
 
 declare global {
   interface Window {
-    electron: {
-      windowControls: {
-        minimize: () => void;
-        maximize: () => void;
-        close: () => void;
-      };
+    startup: {
+      reactReady: () => void;
+    };
+    renderer: {
+      minimize: () => void;
+      maximize: () => void;
+      close: () => void;
     };
     ssh: {
-      connect: (sshConfigs: SshConfig) => Promise<IpcResponsePayload>;
-      execute: (command) => Promise<IpcResponseExecutionPayload>;
+      startTerminal: (id: Uuid, sshConfigs: SshConfig) => Promise<IpcResponsePayload>;
+      validateConfig: (sshConfigs: SshConfig) => Promise<IpcResponsePayload<ConfigValidation>>;
+      execute: (command: string) => Promise<IpcResponseExecutionPayload>;
+      sendData: (id: Uuid, data: string) => void;
+      resizeTerminal: (id: Uuid, dimension: { rows: number; cols: number }) => void;
+      onData: (callback: (id: Uuid, data: string) => void) => void;
+      onError: (callback: (id: Uuid, error: string) => void) => void;
+      onStatus: (callback: (id: Uuid, status: string) => void) => void;
     };
     utils: {
       selectFile: () => Promise<IpcResponsePayload>;
       getPlatform: () => Promise<IpcResponsePayload>;
     };
+  }
+
+  interface WindowEventMap {
+    terminalResize: CustomEvent<void>;
   }
 }

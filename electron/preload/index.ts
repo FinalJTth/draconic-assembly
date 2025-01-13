@@ -1,5 +1,8 @@
-import { ipcRenderer, contextBridge } from "electron";
-import { SshConfig } from "electron/classes/ssh";
+import { IpcResponsePayload } from "#/types/ipc";
+import { SshConfig } from "#/types/ssh";
+import { Uuid } from "#/types/uuid";
+import { contextBridge, ipcRenderer } from "electron";
+import { ApiType, ContextBridgeBuilder } from "../classes/ipc";
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld("ipcRenderer", {
@@ -25,7 +28,7 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
 });
 
 // --------- Preload scripts loading ---------
-function domReady(condition: DocumentReadyState[] = ["complete", "interactive"]) {
+function domReady(condition: DocumentReadyState[] = ["complete", "interactive"]): Promise<boolean> {
   return new Promise((resolve) => {
     if (condition.includes(document.readyState)) {
       resolve(true);
@@ -40,12 +43,12 @@ function domReady(condition: DocumentReadyState[] = ["complete", "interactive"])
 }
 
 const safeDOM = {
-  append(parent: HTMLElement, child: HTMLElement) {
+  append(parent: HTMLElement, child: HTMLElement): HTMLElement | undefined {
     if (!Array.from(parent.children).find((e) => e === child)) {
       return parent.appendChild(child);
     }
   },
-  remove(parent: HTMLElement, child: HTMLElement) {
+  remove(parent: HTMLElement, child: HTMLElement): HTMLElement | undefined {
     if (Array.from(parent.children).find((e) => e === child)) {
       return parent.removeChild(child);
     }
@@ -58,7 +61,7 @@ const safeDOM = {
  * https://projects.lukehaas.me/css-loaders
  * https://matejkustec.github.io/SpinThatShit
  */
-function useLoading() {
+function useLoading(): Record<string, () => void> {
   const className = `loaders-css__square-spin`;
   const styleContent = `
 @keyframes square-spin {
@@ -96,11 +99,11 @@ function useLoading() {
   oDiv.innerHTML = `<div class="${className}"><div></div></div>`;
 
   return {
-    appendLoading() {
+    appendLoading(): void {
       safeDOM.append(document.head, oStyle);
       safeDOM.append(document.body, oDiv);
     },
-    removeLoading() {
+    removeLoading(): void {
       safeDOM.remove(document.head, oStyle);
       safeDOM.remove(document.body, oDiv);
     },
@@ -110,28 +113,73 @@ function useLoading() {
 // ----------------------------------------------------------------------
 
 const { appendLoading, removeLoading } = useLoading();
-domReady().then(appendLoading);
+domReady().then(() => ipcRenderer.send("startup:dom-ready"));
 
-window.onmessage = (ev) => {
-  ev.data.payload === "removeLoading" && removeLoading();
+window.onmessage = (ev): void => {
+  if (ev.data.payload === "removeLoading") {
+    removeLoading();
+  }
 };
-
-contextBridge.exposeInMainWorld("electron", {
-  windowControls: {
-    minimize: () => ipcRenderer.send("window:minimize"),
-    maximize: () => ipcRenderer.send("window:maximize"),
-    close: () => ipcRenderer.send("window:close"),
-  },
+/*
+contextBridge.exposeInMainWorld("renderer", {
+  minimize: () => ipcRenderer.send("window:minimize"),
+  maximize: () => ipcRenderer.send("window:maximize"),
+  close: () => ipcRenderer.send("window:close"),
 });
+*/
 
+/*
 contextBridge.exposeInMainWorld("ssh", {
-  connect: (config: SshConfig) => ipcRenderer.invoke("ssh:connect", config),
+  startSsh: (config: SshConfig) => ipcRenderer.invoke("ssh:start-ssh", config),
+  validateConfig: (config: SshConfig) => ipcRenderer.invoke("ssh:validate-config", config),
   execute: (command: string) => ipcRenderer.invoke("ssh:execute", command),
+  sendData: (data: string) => ipcRenderer.send("ssh:send-data", data),
+  resizeTerminal: (dimension: { rows: number; cols: number }) => ipcRenderer.send("ssh:resize-terminal", dimension),
+  onData: (callback: (data: string) => void) => ipcRenderer.on("ssh:on-data", (_, data) => callback(data)),
+  onError: (callback: (error: string) => void) => ipcRenderer.on("ssh:on-error", (_, error) => callback(error)),
+  onStatus: (callback: (status: string) => void) => ipcRenderer.on("ssh:on-status", (_, status) => callback(status)),
 });
+*/
 
+/*
 contextBridge.exposeInMainWorld("utils", {
   selectFile: () => ipcRenderer.invoke("utils:select-file"),
   getPlatform: () => ipcRenderer.invoke("utils:get-platform"),
 });
+*/
+
+ContextBridgeBuilder.add("startup", "react-ready", ApiType.Send);
+
+ContextBridgeBuilder.add("renderer", "minimize", ApiType.Send);
+ContextBridgeBuilder.add("renderer", "maximize", ApiType.Send);
+ContextBridgeBuilder.add("renderer", "close", ApiType.Send);
+
+ContextBridgeBuilder.add<[Uuid, SshConfig], Promise<IpcResponsePayload<unknown>>>(
+  "ssh",
+  "start-terminal",
+  ApiType.Invoke,
+);
+ContextBridgeBuilder.add<[SshConfig], Promise<IpcResponsePayload<unknown>>>("ssh", "validate-config", ApiType.Invoke);
+ContextBridgeBuilder.add<[Uuid, string]>("ssh", "send-data", ApiType.Send);
+ContextBridgeBuilder.add<[Uuid, { rows: number; cols: number }]>("ssh", "resize-terminal", ApiType.Send);
+ContextBridgeBuilder.add<[Uuid, string]>("ssh", "on-data", ApiType.Callback);
+ContextBridgeBuilder.add<[Uuid, string]>("ssh", "on-error", ApiType.Callback);
+ContextBridgeBuilder.add<[Uuid, string]>("ssh", "on-status", ApiType.Callback);
+
+ContextBridgeBuilder.add("utils", "select-file", ApiType.Invoke);
+ContextBridgeBuilder.add("utils", "get-platform", ApiType.Invoke);
+
+ContextBridgeBuilder.exposeAll();
+
+ipcRenderer.send(
+  "startup:preload-finished",
+  Object.entries(ContextBridgeBuilder.ContextBridgeHolder).reduce(
+    (record, kvp) => {
+      record[kvp[0] as string] = Object.keys(kvp[1]) as string[];
+      return record;
+    },
+    {} as Record<string, string[]>,
+  ),
+);
 
 setTimeout(removeLoading, 4999);

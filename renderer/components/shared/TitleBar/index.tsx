@@ -1,38 +1,64 @@
 import { Flex, Text } from "@radix-ui/themes";
-import React from "react";
+import { memo, ReactElement } from "react";
 
 import TitleButton from "./TitleButton";
-import { Link } from "@tanstack/react-router";
+import "/fonts/MorrisRoman-Black.ttf?url";
 
-const TitleBar = (): React.ReactElement => {
-  const handleMinimize = (): void => window.electron.windowControls.minimize();
-  const handleMaximize = (): void => window.electron.windowControls.maximize();
-  const handleClose = (): void => window.electron.windowControls.close();
+interface TitleBarProps {
+  height: string;
+}
 
-  // WebkitAppRegion: "drag",
+const TitleBar = ({ height }: TitleBarProps): ReactElement => {
+  const handleMinimize = (): void => window.renderer.minimize();
+  const handleMaximize = (): void => window.renderer.maximize();
+  const handleClose = (): void => window.renderer.close();
 
   return (
     <Flex
-      id="title-bar"
       justify="between"
-      className="fixed left-0 top-0 z-50 flex h-[20px] w-full items-center justify-between overflow-y-hidden"
+      align="center"
+      width="100%"
+      position="fixed"
+      top="0"
+      left="0"
+      className={`fixed z-50 overflow-y-hidden border-b border-b-neutral-800 bg-neutral-900`}
       style={{
-        backgroundColor: "rgba(25, 37.5, 50)",
+        WebkitAppRegion: "drag",
+        height: height,
       }}
     >
-      <Text as="span" id="app-title" size="2" ml="3" weight="bold" color="cyan">
-        Draconic Assembly
-      </Text>
-      <Link to="/main" className="[&.active]:font-bold">
-        <Text as="span" id="app-title" size="2" ml="3" weight="bold" color="cyan">
-          Main
-        </Text>
-      </Link>{" "}
+      <Flex direction="row">
+        <Flex height="100%" align="center" className="rounded-r-xl border-r border-r-neutral-800 bg-neutral-800">
+          <img src="/dragon-cyan.png" className="ml-3 h-[24px] w-[24px]" />
+          <Text
+            as="span"
+            id="app-title"
+            size="5"
+            ml="3"
+            mr="4"
+            weight="bold"
+            color="cyan"
+            style={{
+              fontFamily: "MorrisRoman",
+            }}
+          >
+            Azure Flow
+          </Text>
+        </Flex>
+        <Flex direction="row" align="center">
+          <Text as="span" size="1" ml="4" color="gray">
+            File
+          </Text>
+          <Text as="span" size="1" ml="5" color="gray">
+            Terminal
+          </Text>
+        </Flex>
+      </Flex>
       <Flex
-        id="title-bar-buttons"
         justify="center"
         align="center"
-        className="noselect flex"
+        height="100%"
+        className="noselect"
         style={{
           WebkitAppRegion: "no-drag",
         }}
@@ -49,4 +75,4 @@ const TitleBar = (): React.ReactElement => {
   );
 };
 
-export default TitleBar;
+export default memo(TitleBar);

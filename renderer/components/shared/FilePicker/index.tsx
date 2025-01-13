@@ -1,22 +1,19 @@
 import { Button, Container } from "@radix-ui/themes";
-import React, { useMemo, useRef } from "react";
+import React, { ReactElement, useRef } from "react";
 
 const FilePicker = ({
   className,
   children,
-}: Readonly<{ children: React.ReactNode }> & { className?: string }): React.ReactElement => {
+}: Readonly<{ children: React.ReactNode }> & { className?: string }): ReactElement => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleOnClick = useMemo(
-    () => () => {
-      const input = inputRef.current;
+  const handleOnClick = (): void => {
+    const input = inputRef.current;
 
-      if (input) {
-        console.log(input.files);
-      }
-    },
-    [],
-  );
+    if (input) {
+      console.log(input.files);
+    }
+  };
 
   return (
     <Container className={className}>

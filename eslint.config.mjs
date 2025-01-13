@@ -1,12 +1,12 @@
+import { FlatCompat } from "@eslint/eslintrc";
+import js from "@eslint/js";
 import typescriptEslintEslintPlugin from "@typescript-eslint/eslint-plugin";
-import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
+import react from "eslint-plugin-react";
+import unusedImports from "eslint-plugin-unused-imports";
+import globals from "globals";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
-import unusedImports from "eslint-plugin-unused-imports";
-import react from "eslint-plugin-react";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,17 +39,20 @@ export default [
       parser: tsParser,
       ecmaVersion: 5,
       sourceType: "module",
-
+      /*
       parserOptions: {
         project: "tsconfig.json",
       },
+      */
     },
 
     rules: {
       "@typescript-eslint/interface-name-prefix": "off",
-      "@typescript-eslint/explicit-function-return-type": "warn",
-      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/explicit-function-return-type": "error",
+      "@typescript-eslint/explicit-module-boundary-types": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
+
+      "@typescript-eslint/no-unused-vars": ["off"],
 
       "unused-imports/no-unused-imports": "error",
       "unused-imports/no-unused-vars": [

@@ -16,6 +16,13 @@
 }
   */
 
+@font-face {
+  font-family: "MorrisRoman";
+  src:
+    local("MorrisRoman") format("otf"),
+    url("/fonts/MorrisRoman-Black.ttf");
+}
+
 body {
   overflow: hidden; /* Prevent scrolling of the body */
 }
@@ -32,7 +39,25 @@ body {
 
 .scroller-transition:hover {
   /* the color we want the scrollbar on hover */
-  border-color: rgba(100, 100, 120, 0.397);
+  border-color: rgba(100, 100, 120, 0.4);
+}
+
+.xterm-viewport {
+  /* fill parent */
+  display: block;
+
+  margin-left: 16px;
+  /* set to some transparent color */
+  @apply border-neutral-400 border-opacity-40;
+}
+
+.xterm-viewport:hover {
+  /* the color we want the scrollbar on hover */
+  border-color: rgba(100, 100, 120, 0.4);
+}
+
+.xterm-viewport::-webkit-scrollbar {
+  width: 4px;
 }
 
 *::-webkit-scrollbar {
@@ -59,12 +84,6 @@ body {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-}
-
-.animated-container {
-  position: absolute;
-  transition: all 0.3s ease;
-  overflow: hidden; /* Ensures the content doesn't overflow during animation */
 }
 
 @layer base {

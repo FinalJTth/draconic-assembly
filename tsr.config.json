@@ -3,5 +3,7 @@
   "generatedRouteTree": "./renderer/routeTree.gen.ts",
   "routeFilePrefix": "~",
   "routeFileIgnorePrefix": "-",
-  "quoteStyle": "double"
+  "quoteStyle": "double",
+  "semicolons": true,
+  "indexToken": "index"
 }

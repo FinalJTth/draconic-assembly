@@ -1,0 +1,116 @@
+import { useModels } from "@/stores";
+import { observer } from "mobx-react-lite";
+import React, { useEffect, useRef, useState } from "react";
+import { Terminal } from "@xterm/xterm";
+
+interface TerminalWindowProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+  width: string;
+  height: string;
+}
+
+const TerminalWindow = (): ReactElement => {
+  const { Main } = useModels();
+
+  // const [commands, setCommands] = useState<string[]>([]);
+  const [currentCommand, setCurrentCommand] = useState<string>("");
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const terminal = useRef<Terminal | null>(null);
+
+  const currentTerminal = Main.sessions[0].getCurrentTerminal();
+
+  useEffect(() => {
+    if (!terminal.current) {
+      terminal.current = new Terminal({
+        cols: 80,
+        rows: 24,
+        theme: {
+          background: "#1a202c",
+          foreground: "#ffffff",
+        },
+      });
+    }
+
+    terminal.current.open(terminalRef.current!);
+
+    window.ssh.onData((data) => {
+      const lines = data.split("\n");
+
+      const trimmedLines: Array<string> = lines.map((line) => {
+        return line;
+      });
+
+      currentTerminal.appendLines(trimmedLines);
+    });
+
+    window.ssh.onError((error) => {
+      currentTerminal.appendLine(`Error: ${error}`);
+    });
+    window.ssh.onStatus((status) => {
+      currentTerminal.appendLine(`Status: ${status}`);
+    });
+  }, []);
+
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>): Promise<void> => {
+    if (e.key === "Enter" && currentCommand.trim()) {
+      // currentTerminal.appendLine(currentCommand);
+      await currentTerminal.sendCommand(currentCommand);
+      // setCommands((prev) => [...prev, currentCommand]);
+      setCurrentCommand("");
+    }
+  };
+
+  // Scroll to bottom whenever a new command is added
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [currentTerminal.log.length]);
+
+  return (
+    <div ref={terminalRef} className="w-full h-full" />
+    /*
+    <div
+      ref={terminalRef}
+      className="flex-1 overflow-y-auto bg-black rounded-md h-full w-full max-w-full max-h-full scroller-transition "
+      style={{
+        color
+        WebkitTouchCallout: "revert",
+        WebkitUserSelect: "revert",
+        fontFamily: "Cascadia Code",
+        backgroundColor: "#1a202c", // Background for terminal-like look
+        padding: "10px",
+        scrollSnapType: "y mandatory",
+      }}
+    >
+      {getSnapshot(currentTerminal).log.map((log, index) => (
+        <div key={index} className="overflow-y-auto whitespace-nowrap" style={{ scrollSnapAlign: "start" }}>
+          <Text as="span" className="text-sm text-gray-300 whitespace-pre-wrap break-words resize-none overflow-hidden">
+            {log}
+          </Text>
+        </div>
+
+
+        <div
+          key={index}
+          className="container overflow-y-auto whitespace-pre-wrap break-words text-sm"
+          style={{ fontFamily: "Cascadia Code", scrollSnapAlign: "start" }}
+          dangerouslySetInnerHTML={{
+            __html: Anser.ansiToHtml(log), // Convert ANSI codes to HTML
+          }}
+        />
+      ))}
+      <input
+        className="outline-none text-sm text-gray-300 w-full bg-transparent resize-none overflow-hidden whitespace-pre-wrap break-words"
+        value={currentCommand}
+        style={{ fontFamily: "Cascadia Code" }}
+        autoFocus
+        onChange={(e) => setCurrentCommand(e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
+    </div>
+    */
+  );
+};
+
+export default observer(TerminalWindow);

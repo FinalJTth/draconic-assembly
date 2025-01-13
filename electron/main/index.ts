@@ -1,14 +1,15 @@
-import { app, BrowserWindow, shell, ipcMain, dialog } from "electron";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+// import { createRequire } from "node:module";
+import { CommandResult, SshConfig } from "#/types/ssh";
+import { Uuid } from "#/types/uuid";
 import os from "node:os";
-import fs from "fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { IpcBuilder, IpcEventType, IpcResponse } from "../classes/ipc";
+import { Session, SshTerminal, validateConfig } from "../classes/ssh";
 import { update } from "./update";
-import { SshConfig, SshManager } from "../classes/ssh";
-import { IpcResponse } from "../classes/ipc";
 
-const require = createRequire(import.meta.url);
+// const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The built directory structure
@@ -41,19 +42,22 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 let win: BrowserWindow | null = null;
+const session: Session = new Session();
 const preload = path.join(__dirname, "../preload/index.mjs");
 const indexHtml = path.join(RENDERER_DIST, "index.html");
 
-async function createWindow() {
+async function createWindow(): Promise<void> {
   win = new BrowserWindow({
     title: "Main window",
     icon: path.join(process.env.VITE_PUBLIC, "favicon.ico"),
-    width: 1600,
-    height: 900,
-    minWidth: 640,
-    minHeight: 480,
+    width: 0,
+    height: 0,
+    minWidth: 720,
+    minHeight: 540,
+    backgroundColor: "#111111",
     autoHideMenuBar: true,
     frame: false,
+    show: false,
     webPreferences: {
       preload,
       sandbox: true,
@@ -73,7 +77,13 @@ async function createWindow() {
     // #298
     win.loadURL(VITE_DEV_SERVER_URL);
     // Open devTool if the app is not packaged
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
+    // Press F12 to open dev tool if the app is not packaged
+    win.webContents.on("before-input-event", (_, input) => {
+      if (input.type === "keyDown" && input.key === "F12") {
+        win?.webContents.toggleDevTools();
+      }
+    });
   } else {
     win.loadFile(indexHtml);
   }
@@ -92,8 +102,6 @@ async function createWindow() {
   // Auto update
   update(win);
 }
-
-app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
   win = null;
@@ -134,12 +142,13 @@ ipcMain.handle("open-win", (_, arg) => {
   }
 });
 
-ipcMain.on("window:minimize", () => {
+/*
+ipcMain.on("renderer:minimize", () => {
   const window = BrowserWindow.getFocusedWindow();
   if (window) window.minimize();
 });
 
-ipcMain.on("window:maximize", () => {
+ipcMain.on("renderer:maximize", () => {
   const window = BrowserWindow.getFocusedWindow();
   if (window) {
     if (window.isMaximized()) {
@@ -150,41 +159,109 @@ ipcMain.on("window:maximize", () => {
   }
 });
 
-ipcMain.on("window:close", () => {
+ipcMain.on("renderer:close", () => {
   const window = BrowserWindow.getFocusedWindow();
   if (window) window.close();
 });
+*/
 
-ipcMain.handle("ssh:connect", async (event, sshConfig: SshConfig) => {
-  try {
-    await SshManager.instance.connect(sshConfig);
-    return IpcResponse.OnSuccess("Connect successfully.");
-  } catch (error: any) {
-    return IpcResponse.OnFailure(error.message);
-  }
+app.whenReady().then(() => {
+  createWindow();
 });
 
-ipcMain.handle("ssh:execute", async (event, command: string) => {
-  try {
-    console.log(`Received command "${command}"`);
-    const result = await SshManager.instance.execute(command);
-    return IpcResponse.OnSuccess("Execute command successfully.", result);
-  } catch (error: any) {
-    return IpcResponse.OnFailure(error.message);
-  }
-});
+app.on("ready", async () => {
+  ipcMain.once("startup:dom-ready", () => {});
 
-ipcMain.handle("utils:select-file", async () => {
-  const { canceled, filePaths } = await dialog.showOpenDialog({
-    properties: ["openFile"],
+  ipcMain.once("startup:react-ready", () => {
+    if (win) {
+      win?.setSize(1600, 900);
+      win.center();
+      win.show();
+    }
   });
-  if (canceled) {
-    return IpcResponse.OnSuccess("Selection canceled.");
-  }
 
-  return IpcResponse.OnSuccess("Private key selected successfully.", filePaths[0]);
-});
+  IpcBuilder.exposedApiNames = await new Promise((resolve) => {
+    ipcMain.once("startup:preload-finished", (_, data: Record<string, string[]>) => {
+      resolve(data);
+    });
+  });
 
-ipcMain.handle("utils:get-platform", async () => {
-  return IpcResponse.OnSuccess("Success.", os.platform());
+  IpcBuilder.createEvent("renderer", "minimize", IpcEventType.On, () => {
+    const window = BrowserWindow.getFocusedWindow();
+    if (window) window.minimize();
+  });
+
+  IpcBuilder.createEvent("renderer", "maximize", IpcEventType.On, () => {
+    const window = BrowserWindow.getFocusedWindow();
+    if (window) {
+      if (window.isMaximized()) {
+        window.unmaximize();
+      } else {
+        window.maximize();
+      }
+    }
+  });
+
+  IpcBuilder.createEvent("renderer", "close", IpcEventType.On, () => {
+    const window = BrowserWindow.getFocusedWindow();
+    if (window) window.close();
+  });
+
+  ipcMain.handle("ssh:start-terminal", async (event: Electron.IpcMainInvokeEvent, id: Uuid, sshConfig: SshConfig) => {
+    const terminal = new SshTerminal(event, id, sshConfig);
+
+    try {
+      await terminal.connect(event, sshConfig);
+    } catch (error: any) {
+      return IpcResponse.OnFailure(error.message);
+    }
+
+    session.terminals.push(terminal);
+    return IpcResponse.OnSuccess("Connect successfully.");
+  });
+
+  ipcMain.on(`ssh:send-data`, (_, id: Uuid, data: string) => {
+    session.terminals.find((terminal) => terminal.id === id)?.sendData(data);
+  });
+
+  ipcMain.on(`ssh:resize-terminal`, (_, id: Uuid, { rows, cols }: { rows: number; cols: number }) => {
+    session.terminals.find((terminal) => terminal.id === id)?.resizeTerminal({ rows, cols });
+  });
+
+  ipcMain.handle("ssh:validate-config", async (event: Electron.IpcMainInvokeEvent, sshConfig: SshConfig) => {
+    const validatePayload = await validateConfig(sshConfig);
+    if (validatePayload.isSuccessful) {
+      return IpcResponse.OnSuccess<{ isSuccessful: true }>("Valid.", { isSuccessful: true });
+    } else {
+      return IpcResponse.OnSuccess<{ isSuccessful: false; error: Error }>("Invalid.", {
+        isSuccessful: false,
+        error: validatePayload.error,
+      });
+    }
+  });
+
+  ipcMain.handle("ssh:execute", async (event, command: string) => {
+    try {
+      console.log(`Received command "${command}"`);
+      const result = await SshTerminal.instance.execute(command);
+      return IpcResponse.OnSuccess<CommandResult>("Execute command successfully.", result);
+    } catch (error: any) {
+      return IpcResponse.OnFailure(error.message);
+    }
+  });
+
+  ipcMain.handle("utils:select-file", async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ["openFile"],
+    });
+    if (canceled) {
+      return IpcResponse.OnSuccess("Selection canceled.");
+    }
+
+    return IpcResponse.OnSuccess("Private key selected successfully.", filePaths[0]);
+  });
+
+  ipcMain.handle("utils:get-platform", async () => {
+    return IpcResponse.OnSuccess("Success.", os.platform());
+  });
 });

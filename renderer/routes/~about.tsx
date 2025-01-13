@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ReactElement } from "react";
 
-const About = (): React.ReactElement => {
+const About = (): ReactElement => {
   return <div className="p-2">Hello from About!</div>;
 };
 

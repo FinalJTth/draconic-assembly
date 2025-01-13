@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import electron from "vite-plugin-electron/simple";
 import pkg from "./package.json";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 // vitest automatically sets NODE_ENV to 'test' when running tests
 const isTest = process.env.NODE_ENV === "test";
@@ -17,12 +18,19 @@ export default defineConfig(({ command }) => {
   const sourcemap = isServe || !!process.env.VSCODE_DEBUG;
 
   return {
+    build: {
+      rollupOptions: {
+        external: ["node-pty"],
+      },
+    },
     resolve: {
       alias: {
         "@": path.join(__dirname, "renderer"),
+        "#": path.join(__dirname, "common"),
       },
     },
     plugins: [
+      !isTest && TanStackRouterVite(),
       react(),
 
       electron({
@@ -31,9 +39,7 @@ export default defineConfig(({ command }) => {
           entry: "electron/main/index.ts",
           onstart(args) {
             if (process.env.VSCODE_DEBUG) {
-              console.log(
-                /* For `.vscode/.debug.script.mjs` */ "[startup] Electron App"
-              );
+              console.log(/* For `.vscode/.debug.script.mjs` */ "[startup] Electron App");
             } else {
               args.startup();
             }
@@ -44,9 +50,7 @@ export default defineConfig(({ command }) => {
               minify: isBuild,
               outDir: "dist-electron/main",
               rollupOptions: {
-                external: Object.keys(
-                  "dependencies" in pkg ? pkg.dependencies : {}
-                ),
+                external: Object.keys("dependencies" in pkg ? pkg.dependencies : {}),
               },
             },
           },
@@ -61,9 +65,7 @@ export default defineConfig(({ command }) => {
               minify: isBuild,
               outDir: "dist-electron/preload",
               rollupOptions: {
-                external: Object.keys(
-                  "dependencies" in pkg ? pkg.dependencies : {}
-                ),
+                external: Object.keys("dependencies" in pkg ? pkg.dependencies : {}),
               },
             },
           },
@@ -76,7 +78,7 @@ export default defineConfig(({ command }) => {
     ],
     server:
       process.env.VSCODE_DEBUG &&
-      (() => {
+      ((): { host: string; port: number } => {
         const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL);
         return {
           host: url.hostname,

@@ -1,59 +1,47 @@
-import { cast, Instance, types } from "mobx-state-tree";
+import { IpcResponsePayload } from "#/types/ipc";
+import { flow, Instance, types } from "mobx-state-tree";
+import { customTypes } from "../custom-types";
+import { Main } from "../main";
 
 export const TerminalModel = types
   .model("Terminal", {
-    log: types.array(types.string),
-    path: types.string,
-    input: types.string,
+    id: customTypes.uuid,
   })
   .actions((self) => {
-    const getLog = (): Array<string> => {
-      return self.log;
-    };
-
-    const getPath = (): string => {
-      return self.path;
-    };
-
-    const getInput = (): string => {
-      return self.input;
-    };
-
-    const setLog = (log: Array<string>): void => {
-      self.log = cast(log);
-    };
-
-    const setPath = (path: string): void => {
-      self.path = path;
-    };
-
-    const setInput = (input: string): void => {
-      self.input = input;
+    const getId = (): string => {
+      return self.id;
     };
 
     return {
-      getLog,
-      getPath,
-      getInput,
-      setLog,
-      setPath,
-      setInput,
+      getId,
     };
   })
   .actions((self) => {
-    const appendLog = (log: Array<string>): void => {
-      self.log.concat(log);
-    };
+    const createNewShellByCurrentSession = flow(function* (): Generator<
+      PromiseLike<unknown>,
+      void,
+      IpcResponsePayload<undefined>
+    > {
+      const currentSession = Main.getCurrentSession();
+
+      const response = yield window.ssh.startTerminal(self.id, {
+        host: currentSession.host,
+        port: currentSession.port,
+        username: currentSession.username,
+        keyPath: currentSession.keyPath,
+        secret: currentSession.secret,
+      });
+
+      if (response.success) {
+        console.log("Connected successfully");
+      } else {
+        throw new Error("Connection failed : " + response.message);
+      }
+    });
 
     return {
-      appendLog,
+      createNewShellByCurrentSession,
     };
   });
 
 export type TerminalInstance = Instance<typeof TerminalModel>;
-
-export const Terminal: TerminalInstance = TerminalModel.create({
-  log: [],
-  path: "",
-  input: "",
-});

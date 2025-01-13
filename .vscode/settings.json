@@ -1,24 +1,30 @@
 {
   "prettier.tabWidth": 2,
   "[typescript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "editor.formatOnType": false, // required
-  "editor.formatOnPaste": false, // optional
-  "editor.formatOnSave": true, // optional
-  "editor.formatOnSaveMode": "file", // required to format on save
-  "files.autoSave": "onFocusChange", // optional but recommended
+  "editor.formatOnType": false,
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "files.autoSave": "onFocusChange",
   "files.watcherExclude": {
     "**/routeTree.gen.ts": true
   },
   "eslint.workingDirectories": [
     "./electron",
-    "./renderer"
+    "./renderer",
+    "./common"
   ],
   "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
     "source.fixAll.eslint": "explicit"
-  }
+  },
+  "editor.tabSize": 2
 }
