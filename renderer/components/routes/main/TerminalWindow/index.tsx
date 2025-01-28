@@ -4,7 +4,7 @@ import { Terminal } from "@xterm/xterm";
 import { memo, ReactElement, useEffect, useRef } from "react";
 
 import "@xterm/xterm/css/xterm.css";
-import { Uuid } from "../../../../common/types/uuid/index";
+import { Uuid } from "../../../../../common/types/uuid/index";
 
 const TerminalWindow = (): ReactElement => {
   const { Main } = useModels();
@@ -86,6 +86,9 @@ const TerminalWindow = (): ReactElement => {
     return (): void => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("terminalResize", handleResize);
+      window.utils.removeRendererListeners("ssh:on-data");
+      window.utils.removeRendererListeners("ssh:on-error");
+      window.utils.removeRendererListeners("ssh:on-status");
       terminal.current?.dispose();
       terminal.current = null;
       fitAddon.dispose();

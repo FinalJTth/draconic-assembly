@@ -3,6 +3,7 @@ import js from "@eslint/js";
 import typescriptEslintEslintPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import react from "eslint-plugin-react";
+import reactCompiler from "eslint-plugin-react-compiler";
 import unusedImports from "eslint-plugin-unused-imports";
 import globals from "globals";
 import path from "node:path";
@@ -26,6 +27,7 @@ export default [
       "@typescript-eslint": typescriptEslintEslintPlugin,
       "unused-imports": unusedImports,
       react: react,
+      "react-compiler": reactCompiler,
     },
 
     languageOptions: {
@@ -67,6 +69,8 @@ export default [
 
       "react/jsx-uses-react": "error",
       "react/jsx-uses-vars": "error",
+
+      "react-compiler/react-compiler": "error",
 
       "prettier/prettier": [
         "error",

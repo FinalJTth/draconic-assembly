@@ -1,8 +1,38 @@
 import { CommandResult, SshConfig } from "#/types/ssh";
 import { Uuid } from "#/types/uuid";
-import { ipcMain } from "electron";
 import fs from "fs";
 import { Client, ClientChannel } from "ssh2";
+
+/*
+  const shellType = process.platform === "win32" ? "cmd.exe" : "bash";
+  const shell = spawn(shellType, [], {
+    name: "xterm-color",
+    cols: 80,
+    rows: 24,
+    cwd: process.env.HOME,
+    env: process.env,
+  });
+  */
+
+// event.sender.send("ssh:on-status", "Connected to server");
+/*
+  const shell = pty.spawn("powershell.exe", [], {
+    name: "xterm-256color",
+    cwd: process.env.HOME,
+    env: process.env,
+  });
+
+  shell.onData((data) => event.sender.send("ssh:on-data", data.toString()));
+
+  ipcMain.on("ssh:send-data", (_, command: string) => {
+    shell.write(`${command}`);
+    // stream.write(`echo "__USER_HOST_PWD__$USER@$(hostname) $(pwd)"\n`);
+  });
+
+  ipcMain.on("ssh:resize-terminal", (_, { rows, cols }: { rows: number; cols: number }) => {
+    shell.resize(cols, rows); // Update terminal size
+  });
+  */
 
 export class Session {
   id: Uuid = "00000000-0000-0000-0000-000000000000" as Uuid;
@@ -25,26 +55,22 @@ class IdentifiableObject {
 }
 
 export class SshTerminal extends IdentifiableObject implements ITerminal {
-  // public static instance: SshTerminal = new SshTerminal("00000000-0000-0000-0000-000000000000" as Uuid);
-
   client: Client | null = null;
   shellStream: ClientChannel | null = null;
 
-  constructor(event: Electron.IpcMainInvokeEvent, id: Uuid, { host, port, username, keyPath, secret }: SshConfig) {
+  constructor(event: Electron.IpcMainInvokeEvent, id: Uuid, sshConfig: SshConfig) {
     super(id);
-    this.connect(event, { host, port, username, keyPath, secret });
+    this.connect(event, sshConfig).then(
+      (client) => (this.client = client),
+      (error) => {
+        throw new Error(`An unanticipated error occured while connecting to SSH server : ${error}`);
+      },
+    );
   }
 
-  public connect(
-    event: Electron.IpcMainInvokeEvent,
-    { host, port, username, keyPath, secret }: SshConfig,
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.client) {
-        ipcMain.removeAllListeners(`ssh:send-data:${this.id}`);
-        ipcMain.removeAllListeners(`ssh:resize-terminal:${this.id}`);
-      }
-
+  private connect(event: Electron.IpcMainInvokeEvent, config: SshConfig): Promise<Client> {
+    return new Promise<Client>((resolve, reject) => {
+      const { secret, keyPath, ...restConfig } = config;
       let privateKey: Buffer | undefined;
       if (keyPath && keyPath?.length > 0) {
         try {
@@ -54,44 +80,14 @@ export class SshTerminal extends IdentifiableObject implements ITerminal {
         }
       }
 
-      this.client = new Client();
-      this.client
+      const client = new Client();
+      client
         .on("ready", async () => {
-          /*
-          const shellType = process.platform === "win32" ? "cmd.exe" : "bash";
-          const shell = spawn(shellType, [], {
-            name: "xterm-color",
-            cols: 80,
-            rows: 24,
-            cwd: process.env.HOME,
-            env: process.env,
-          });
-          */
-
-          // event.sender.send("ssh:on-status", "Connected to server");
-          /*
-          const shell = pty.spawn("powershell.exe", [], {
-            name: "xterm-256color",
-            cwd: process.env.HOME,
-            env: process.env,
-          });
-
-          shell.onData((data) => event.sender.send("ssh:on-data", data.toString()));
-
-          ipcMain.on("ssh:send-data", (_, command: string) => {
-            shell.write(`${command}`);
-            // stream.write(`echo "__USER_HOST_PWD__$USER@$(hostname) $(pwd)"\n`);
-          });
-
-          ipcMain.on("ssh:resize-terminal", (_, { rows, cols }: { rows: number; cols: number }) => {
-            shell.resize(cols, rows); // Update terminal size
-          });
-          */
-
-          const createShell: Promise<void> = new Promise((resolveShell, _) => {
-            this.client?.shell({ term: "xterm-256color" }, (err, stream) => {
-              if (err) {
-                return event.sender.send("ssh:error", err.message);
+          const createShell: Promise<void> = new Promise((resolveShell, rejectShell) => {
+            client?.shell({ term: "xterm-256color" }, (error, stream) => {
+              if (error) {
+                rejectShell(error);
+                event.sender.send("ssh:error", error.message);
               }
 
               this.shellStream = stream;
@@ -99,7 +95,7 @@ export class SshTerminal extends IdentifiableObject implements ITerminal {
               stream
                 .on("close", () => {
                   event.sender.send(`ssh:on-status`, this.id, "Connection closed");
-                  this.client?.end();
+                  client.end();
                 })
                 .on("data", (data: Buffer) => {
                   event.sender.send(`ssh:on-data`, this.id, data.toString());
@@ -112,9 +108,10 @@ export class SshTerminal extends IdentifiableObject implements ITerminal {
             });
           });
 
-          await createShell;
-
-          resolve();
+          await createShell.then(
+            () => resolve(client),
+            (error) => reject(error),
+          );
         })
         .on("error", (error) => {
           console.error("Client :: error", error);
@@ -123,16 +120,12 @@ export class SshTerminal extends IdentifiableObject implements ITerminal {
         .connect(
           privateKey
             ? {
-                host,
-                port,
-                username,
+                ...restConfig,
                 privateKey,
                 passphrase: secret,
               }
             : {
-                host,
-                port,
-                username,
+                ...restConfig,
                 password: secret,
               },
         );
@@ -171,9 +164,10 @@ export class SshTerminal extends IdentifiableObject implements ITerminal {
 
 export type ConfigValidation = { isSuccessful: true } | { isSuccessful: false; error: Error };
 
-export const validateConfig = ({ host, port, username, keyPath, secret }: SshConfig): Promise<ConfigValidation> => {
+export const validateConfig = (config: SshConfig): Promise<ConfigValidation> => {
   const client = new Client();
   return new Promise((resolve, _) => {
+    const { secret, keyPath, ...restConfig } = config;
     let privateKey: Buffer | undefined;
     if (keyPath && keyPath?.length > 0) {
       if (!fs.existsSync(keyPath)) {
@@ -197,16 +191,12 @@ export const validateConfig = ({ host, port, username, keyPath, secret }: SshCon
 
     const connectionConfig = privateKey
       ? {
-          host,
-          port,
-          username,
+          ...restConfig,
           privateKey,
           passphrase: secret,
         }
       : {
-          host,
-          port,
-          username,
+          ...restConfig,
           password: secret,
         };
 

@@ -1,10 +1,11 @@
+import useDependencies from "@/hooks/UseDependencies";
 import { motion } from "framer-motion";
-import React, { memo, ReactElement, useMemo } from "react";
+import React, { memo, ReactElement, RefObject } from "react";
 
 type Direction = "top" | "bottom" | "left" | "right";
 
 interface EdgeResizerProps {
-  target: HTMLDivElement | null;
+  targetRef: RefObject<HTMLDivElement | null>;
   min: number;
   max: number;
   closeOnMin: boolean;
@@ -14,7 +15,7 @@ interface EdgeResizerProps {
 }
 
 const EdgeResizer = ({
-  target,
+  targetRef,
   min,
   max,
   closeOnMin,
@@ -22,13 +23,11 @@ const EdgeResizer = ({
   direction,
   setDimension,
 }: EdgeResizerProps): ReactElement => {
-  if (!target) {
-    return <></>;
-  }
+  useDependencies(targetRef.current);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
     const startX = e.clientX;
-    const startWidth = target.clientWidth;
+    const startWidth = targetRef.current?.clientWidth;
 
     let resizeTimeout: NodeJS.Timeout;
 
@@ -56,21 +55,18 @@ const EdgeResizer = ({
     document.addEventListener("mouseup", onMouseUp);
   };
 
-  const position = useMemo(
-    () =>
-      direction === "top"
-        ? { left: 0, top: 0, right: 0 }
-        : direction === "bottom"
-          ? { left: 0, bottom: 0, right: 0 }
-          : direction === "left"
-            ? { bottom: 0, left: 0, top: 0 }
-            : direction === "right"
-              ? { top: 0, right: 0, bottom: 0 }
-              : {},
-    [direction],
-  );
+  const position =
+    direction === "top"
+      ? { left: 0, top: 0, right: 0 }
+      : direction === "bottom"
+        ? { left: 0, bottom: 0, right: 0 }
+        : direction === "left"
+          ? { bottom: 0, left: 0, top: 0 }
+          : direction === "right"
+            ? { top: 0, right: 0, bottom: 0 }
+            : {};
 
-  return (
+  return targetRef.current ? (
     <motion.div
       className="w-1 cursor-col-resize"
       style={{ position: "absolute", ...position }}
@@ -78,6 +74,8 @@ const EdgeResizer = ({
       transition={{ duration: 0.4, delay: 0.25 }}
       onMouseDown={handleMouseDown}
     />
+  ) : (
+    <></>
   );
 };
 

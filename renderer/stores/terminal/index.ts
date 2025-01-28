@@ -33,7 +33,7 @@ export const TerminalModel = types
       });
 
       if (response.success) {
-        console.log("Connected successfully");
+        console.log(response.message);
       } else {
         throw new Error("Connection failed : " + response.message);
       }

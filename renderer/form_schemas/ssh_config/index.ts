@@ -1,4 +1,4 @@
-import { z, ZodNumber, ZodOptional } from "zod";
+import { z } from "zod";
 
 export enum SecretType {
   PrivateKey = "Private Key",
@@ -17,20 +17,6 @@ export interface SshConfigForm {
 
 const ipv4Regex: string = `(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)`;
 const domainNameRegex: string = `(^((?!-))(xn--)?[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.(xn--)?([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})$)`;
-
-function IntegerString<schema extends ZodNumber | ZodOptional<ZodNumber>>(
-  schema: schema,
-): z.ZodEffects<z.ZodTypeAny, unknown, unknown> {
-  return z.preprocess((value) => {
-    if (typeof value === "string") {
-      return parseInt(value, 10);
-    } else if (typeof value === "number") {
-      return value;
-    }
-
-    throw new Error("Value cannot be parsed as number");
-  }, schema);
-}
 
 export const sshConfigFormSchema = z.discriminatedUnion("secretType", [
   z.object({

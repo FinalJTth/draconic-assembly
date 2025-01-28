@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, use } from "react";
 import { Main, MainInstance } from "./main";
 
 export interface Models {
@@ -11,4 +11,4 @@ export const models: Models = {
 
 export const modelsContext = createContext(models);
 
-export const useModels = (): Models => useContext(modelsContext);
+export const useModels = (): Models => use(modelsContext);

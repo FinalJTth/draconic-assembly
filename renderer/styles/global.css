@@ -20,7 +20,7 @@
   font-family: "MorrisRoman";
   src:
     local("MorrisRoman") format("otf"),
-    url("/fonts/MorrisRoman-Black.ttf");
+    url("@/assets/fonts/MorrisRoman-Black.woff2");
 }
 
 body {

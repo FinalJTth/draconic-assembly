@@ -1,8 +1,8 @@
-import ExplorerPanel from "@/components/main/ExplorerPanel";
-import SideNav from "@/components/main/SideNav";
-import Terminal from "@/components/main/TerminalWindow";
+import ExplorerPanel from "@/components/routes/main/ExplorerPanel";
+import SideNav from "@/components/routes/main/SideNav";
+import Terminal from "@/components/routes/main/TerminalWindow";
 import MainBox from "@/components/shared/MainBox";
-import useRenderDependency from "@/hooks/UseRenderDependency";
+import useDependencies from "@/hooks/UseDependencies";
 import { useModels } from "@/stores";
 import { DEFAULT_UUID } from "@/utils/uuid";
 import { Box, Flex } from "@radix-ui/themes";
@@ -12,7 +12,7 @@ import { ReactElement, useEffect } from "react";
 const Main = (): ReactElement => {
   const { Main } = useModels();
 
-  useRenderDependency(Main.getCurrentSession().currentTerminalId);
+  useDependencies(Main.getCurrentSession().currentTerminalId);
 
   useEffect(() => {
     Main.getCurrentSession().setCurrentTerminal(Main.getCurrentSession().newTerminal());

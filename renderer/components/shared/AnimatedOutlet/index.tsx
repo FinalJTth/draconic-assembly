@@ -1,9 +1,13 @@
 import { getRouterContext, Outlet, useRouterState } from "@tanstack/react-router";
 import { motion, useIsPresent } from "framer-motion";
 import { cloneDeep } from "lodash";
-import { forwardRef, ReactElement, useContext, useRef } from "react";
+import { ReactElement, Ref, useContext, useRef } from "react";
 
-const AnimatedOutlet = forwardRef<HTMLDivElement>((__, ref): ReactElement => {
+interface AnimatedOutletProps {
+  ref: Ref<HTMLDivElement> | undefined;
+}
+
+const AnimatedOutlet = ({ ref }: AnimatedOutletProps): ReactElement => {
   const RouterContext = getRouterContext();
   const routerContext = useContext(RouterContext);
   const renderedContext = useRef(routerContext);
@@ -31,6 +35,6 @@ const AnimatedOutlet = forwardRef<HTMLDivElement>((__, ref): ReactElement => {
       </RouterContext.Provider>
     </motion.div>
   );
-});
+};
 
 export default AnimatedOutlet;

@@ -1,10 +1,10 @@
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react-swc";
 import { rmSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import electron from "vite-plugin-electron/simple";
 import pkg from "./package.json";
-import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 // vitest automatically sets NODE_ENV to 'test' when running tests
 const isTest = process.env.NODE_ENV === "test";

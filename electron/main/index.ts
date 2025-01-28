@@ -5,6 +5,7 @@ import { Uuid } from "#/types/uuid";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { GridDimension } from "../../common/types/layout/index";
 import { IpcBuilder, IpcEventType, IpcResponse } from "../classes/ipc";
 import { Session, SshTerminal, validateConfig } from "../classes/ssh";
 import { update } from "./update";
@@ -99,13 +100,18 @@ async function createWindow(): Promise<void> {
     return { action: "deny" };
   });
 
+  win.on("closed", () => {
+    win = null;
+  });
+
   // Auto update
   update(win);
 }
 
 app.on("window-all-closed", () => {
-  win = null;
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });
 
 app.on("second-instance", () => {
@@ -166,6 +172,18 @@ ipcMain.on("renderer:close", () => {
 */
 
 app.whenReady().then(() => {
+  /*
+  if (VITE_DEV_SERVER_URL) {
+    installExtension(REACT_DEVELOPER_TOOLS)
+      .then((ext) => {
+        console.log(`Added Extension:  ${ext.name}`);
+        createWindow();
+      })
+      .catch((err) => console.log("An error occurred: ", err));
+  } else {
+    createWindow();
+  }
+  */
   createWindow();
 });
 
@@ -188,7 +206,9 @@ app.on("ready", async () => {
 
   IpcBuilder.createEvent("renderer", "minimize", IpcEventType.On, () => {
     const window = BrowserWindow.getFocusedWindow();
-    if (window) window.minimize();
+    if (window) {
+      window.minimize();
+    }
   });
 
   IpcBuilder.createEvent("renderer", "maximize", IpcEventType.On, () => {
@@ -204,31 +224,33 @@ app.on("ready", async () => {
 
   IpcBuilder.createEvent("renderer", "close", IpcEventType.On, () => {
     const window = BrowserWindow.getFocusedWindow();
-    if (window) window.close();
+    if (window) {
+      window.close();
+    }
   });
 
-  ipcMain.handle("ssh:start-terminal", async (event: Electron.IpcMainInvokeEvent, id: Uuid, sshConfig: SshConfig) => {
-    const terminal = new SshTerminal(event, id, sshConfig);
-
+  IpcBuilder.createEvent("ssh", "start-terminal", IpcEventType.Handle, (event, id: Uuid, sshConfig: SshConfig) => {
     try {
-      await terminal.connect(event, sshConfig);
+      if (session.terminals.find((terminal) => terminal.id === id)) {
+        return IpcResponse.OnSuccess("Connect to existing terminal.");
+      }
+      const terminal = new SshTerminal(event, id, sshConfig);
+      session.terminals.push(terminal);
+      return IpcResponse.OnSuccess("Connect successfully.");
     } catch (error: any) {
       return IpcResponse.OnFailure(error.message);
     }
-
-    session.terminals.push(terminal);
-    return IpcResponse.OnSuccess("Connect successfully.");
   });
 
-  ipcMain.on(`ssh:send-data`, (_, id: Uuid, data: string) => {
+  IpcBuilder.createEvent("ssh", "send-data", IpcEventType.On, (_, id: Uuid, data: string) => {
     session.terminals.find((terminal) => terminal.id === id)?.sendData(data);
   });
 
-  ipcMain.on(`ssh:resize-terminal`, (_, id: Uuid, { rows, cols }: { rows: number; cols: number }) => {
-    session.terminals.find((terminal) => terminal.id === id)?.resizeTerminal({ rows, cols });
+  IpcBuilder.createEvent("ssh", "resize-terminal", IpcEventType.On, (_, id: Uuid, dimension: GridDimension) => {
+    session.terminals.find((terminal) => terminal.id === id)?.resizeTerminal(dimension);
   });
 
-  ipcMain.handle("ssh:validate-config", async (event: Electron.IpcMainInvokeEvent, sshConfig: SshConfig) => {
+  IpcBuilder.createEvent("ssh", "validate-config", IpcEventType.Handle, async (_, sshConfig: SshConfig) => {
     const validatePayload = await validateConfig(sshConfig);
     if (validatePayload.isSuccessful) {
       return IpcResponse.OnSuccess<{ isSuccessful: true }>("Valid.", { isSuccessful: true });
@@ -240,17 +262,17 @@ app.on("ready", async () => {
     }
   });
 
-  ipcMain.handle("ssh:execute", async (event, command: string) => {
+  IpcBuilder.createEvent("ssh", "execute", IpcEventType.Handle, async (_, command: string) => {
     try {
       console.log(`Received command "${command}"`);
-      const result = await SshTerminal.instance.execute(command);
+      const result = await session.terminals[0].execute(command);
       return IpcResponse.OnSuccess<CommandResult>("Execute command successfully.", result);
     } catch (error: any) {
       return IpcResponse.OnFailure(error.message);
     }
   });
 
-  ipcMain.handle("utils:select-file", async () => {
+  IpcBuilder.createEvent("utils", "select-file", IpcEventType.Handle, async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ["openFile"],
     });
@@ -261,7 +283,7 @@ app.on("ready", async () => {
     return IpcResponse.OnSuccess("Private key selected successfully.", filePaths[0]);
   });
 
-  ipcMain.handle("utils:get-platform", async () => {
+  IpcBuilder.createEvent("utils", "get-platform", IpcEventType.Handle, () => {
     return IpcResponse.OnSuccess("Success.", os.platform());
   });
 });

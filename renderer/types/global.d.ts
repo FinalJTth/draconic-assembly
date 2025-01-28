@@ -26,10 +26,7 @@ declare global {
     utils: {
       selectFile: () => Promise<IpcResponsePayload>;
       getPlatform: () => Promise<IpcResponsePayload>;
+      removeRendererListeners: (channel: string) => void;
     };
-  }
-
-  interface WindowEventMap {
-    terminalResize: CustomEvent<void>;
   }
 }

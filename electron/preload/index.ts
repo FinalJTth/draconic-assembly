@@ -165,15 +165,19 @@ ContextBridgeBuilder.add<[Uuid, { rows: number; cols: number }]>("ssh", "resize-
 ContextBridgeBuilder.add<[Uuid, string]>("ssh", "on-data", ApiType.Callback);
 ContextBridgeBuilder.add<[Uuid, string]>("ssh", "on-error", ApiType.Callback);
 ContextBridgeBuilder.add<[Uuid, string]>("ssh", "on-status", ApiType.Callback);
+ContextBridgeBuilder.add<[Uuid, string]>("ssh", "execute", ApiType.Invoke);
 
 ContextBridgeBuilder.add("utils", "select-file", ApiType.Invoke);
 ContextBridgeBuilder.add("utils", "get-platform", ApiType.Invoke);
+ContextBridgeBuilder.addCustom<[string]>("utils", "remove-renderer-listeners", (channel) => {
+  ipcRenderer.removeAllListeners(channel);
+});
 
 ContextBridgeBuilder.exposeAll();
 
 ipcRenderer.send(
   "startup:preload-finished",
-  Object.entries(ContextBridgeBuilder.ContextBridgeHolder).reduce(
+  Object.entries(ContextBridgeBuilder.ApiHolder).reduce(
     (record, kvp) => {
       record[kvp[0] as string] = Object.keys(kvp[1]) as string[];
       return record;

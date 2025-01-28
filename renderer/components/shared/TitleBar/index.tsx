@@ -1,8 +1,9 @@
 import { Flex, Text } from "@radix-ui/themes";
 import { memo, ReactElement } from "react";
 
+import "@/assets/fonts/MorrisRoman-Black.ttf?url";
 import TitleButton from "./TitleButton";
-import "/fonts/MorrisRoman-Black.ttf?url";
+import TitleNameBox from "./TitleNameBox";
 
 interface TitleBarProps {
   height: string;
@@ -21,38 +22,29 @@ const TitleBar = ({ height }: TitleBarProps): ReactElement => {
       position="fixed"
       top="0"
       left="0"
-      className={`fixed z-50 overflow-y-hidden border-b border-b-neutral-800 bg-neutral-900`}
+      className="z-50 select-none overflow-y-hidden border-b border-b-neutral-800 bg-neutral-900"
       style={{
-        WebkitAppRegion: "drag",
-        height: height,
+        height,
       }}
     >
       <Flex direction="row">
-        <Flex height="100%" align="center" className="rounded-r-xl border-r border-r-neutral-800 bg-neutral-800">
-          <img src="/dragon-cyan.png" className="ml-3 h-[24px] w-[24px]" />
-          <Text
-            as="span"
-            id="app-title"
-            size="5"
-            ml="3"
-            mr="4"
-            weight="bold"
-            color="cyan"
-            style={{
-              fontFamily: "MorrisRoman",
-            }}
-          >
-            Azure Flow
-          </Text>
-        </Flex>
+        <TitleNameBox />
         <Flex direction="row" align="center">
           <Text as="span" size="1" ml="4" color="gray">
             File
           </Text>
-          <Text as="span" size="1" ml="5" color="gray">
+          <Text as="span" size="1" ml="5" mr="3" color="gray">
             Terminal
           </Text>
         </Flex>
+      </Flex>
+      <Flex
+        flexGrow="1"
+        style={{
+          WebkitAppRegion: "drag",
+        }}
+      >
+        &nbsp;
       </Flex>
       <Flex
         justify="center"

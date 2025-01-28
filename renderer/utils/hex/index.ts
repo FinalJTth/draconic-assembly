@@ -41,11 +41,11 @@ export const isValidHexString = <T extends number>(str: string, length: T): str 
 };
 
 /**
- * Parses a string into a HexString<T> if valid.
- * @param str The input string.
- * @param length The expected length of the HexString.
- * @returns The parsed HexString<T>.
- * @throws If the string is not a valid hexadecimal string of the specified length.
+ * Parses a string as a hexadecimal string of a given length.
+ * @param str The string to parse.
+ * @param length The length of the hexadecimal string.
+ * @returns The parsed hexadecimal string.
+ * @throws {Error} If the string is not a valid hexadecimal string of the given length.
  */
 export const parseHexString = <T extends number>(str: string, length: T): HexString<T> => {
   if (!isValidHexString(str, length)) {

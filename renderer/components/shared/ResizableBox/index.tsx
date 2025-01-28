@@ -1,3 +1,4 @@
+import { Direction } from "#/types/layout";
 import "@/styles/radix-overrides/index.css";
 import { Box } from "@radix-ui/themes";
 import React, { ReactElement, useMemo, useRef, useState } from "react";
@@ -25,8 +26,6 @@ interface ResizerLocationRight {
   right: ResizerProperty;
 }
 
-type Direction = "top" | "bottom" | "left" | "right";
-
 type ResizerLocation = ResizerLocationTop | ResizerLocationBottom | ResizerLocationLeft | ResizerLocationRight;
 
 interface MainContainerProps {
@@ -42,7 +41,7 @@ const ResizableBox = ({ height = "100%", width = "100%", resizer, children }: Ma
 
   const boxRef = useRef<HTMLDivElement>(null);
 
-  const resizerKvp = useMemo<Array<[Direction, ResizerProperty]>>(
+  const resizerOptions = useMemo<Array<[Direction, ResizerProperty]>>(
     () => Object.entries(resizer) as Array<[Direction, ResizerProperty]>,
     [resizer],
   );
@@ -56,10 +55,10 @@ const ResizableBox = ({ height = "100%", width = "100%", resizer, children }: Ma
       style={{ position: "relative", borderRightWidth: boxWidth === 0 ? "0px" : "1px" }}
     >
       {children}
-      {resizerKvp.map((kvp, index) => (
+      {resizerOptions.map((kvp, index) => (
         <EdgeResizer
           key={index}
-          target={boxRef.current}
+          targetRef={boxRef}
           min={kvp[1].min}
           max={kvp[1].max}
           closeOnMin={kvp[1].closeOnMin}
